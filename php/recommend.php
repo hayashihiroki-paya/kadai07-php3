@@ -1,4 +1,5 @@
 <?php
+
 include('functions.php');
 session_start();
 // echo "ユーザーデータ取得処理開始";

@@ -1,11 +1,20 @@
 <?php
 
+
+define('ENV', 'production'); // local / production
+if (ENV === 'production') {
+    $config = require __DIR__ . '/config.prod.php';
+} else {
+    $config = require __DIR__ . '/config.local.php';
+}
 function connect_db()
 {
+    global $config;
     // 各種項目設定
-    $dbn = 'mysql:dbname=ranobenarabe_ranobe_db;charset=utf8mb4;port=3306;host=localhost';
-    $user = 'root';
-    $pwd = '';
+    $dbn = "mysql:dbname={$config['db_name']};charset=utf8mb4;host={$config['db_host']}";
+    // $dbn = 'mysql:dbname=ranobenarabe_ranobe_db;charset=utf8mb4;port=3306;host=localhost';
+    $user = $config['db_user'];
+    $pwd = $config['db_pass'];
 
     // DB接続
     try {
@@ -56,7 +65,8 @@ function getUserFavoriteData($userID)
 }
 
 // ユーザーのお気に入りに登録済みの本のisbnを一覧で返す関数
-function getUserFavoriteIsbnList($userID) {
+function getUserFavoriteIsbnList($userID)
+{
     $pdo = connect_db();
 
     $sql = 'SELECT DISTINCT isbn
@@ -192,7 +202,8 @@ function groupBookPointsByIsbn($rows)
 }
 
 // ユーザーの評価基準に合わせて評価値を計算する関数
-function calculateRecommendationScores($userPoints, $books) {
+function calculateRecommendationScores($userPoints, $books)
+{
     $result = [];
 
     foreach ($books as $book) {
