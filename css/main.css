@@ -1,0 +1,168 @@
+* {
+    box-sizing: border-box;
+    /* border-radius: 5%; */
+}
+
+body {
+    background-color: rgb(255, 240, 233);
+}
+
+p {
+    margin: 3px;
+}
+
+#interface {
+    display: flex;
+}
+
+/* #progressBar {
+    width: 50px;
+    height: 30px;
+    background-color: rebeccapurple;
+} */
+
+.title {
+    font-size: 40px;
+}
+
+.titleCaption,
+.textInput {
+    font-size: 20px;
+}
+
+.textInput {
+    width: 600px;
+    height: 30px;
+}
+
+.title,
+.titleCaption {
+    margin: 20px;
+}
+
+#leftView {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+}
+
+#view {
+    display: flex;
+}
+
+.viewBlock,
+.book {
+    border: solid 1px black;
+    width: 50%;
+    z-index: 100;
+    padding: 10px;
+}
+
+.viewBlock:hover {
+    background-color: lightcyan;
+}
+
+#result {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+#favorite {
+    position: sticky;
+    width: 45%;
+    height: 700px;
+    top: 100px;
+    margin-left: 30px;
+    border: solid 1px black;
+    padding: 10px;
+    overflow: auto;
+}
+
+.book:hover {
+    background-color: lightcyan;
+}
+
+#main {
+    display: flex;
+}
+
+#bookList {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#detailedInformation {
+    display: none;
+    background-color: lightyellow;
+    z-index: 100;
+    border: solid 1px black;
+    padding: 10px;
+    font-size: 20px;
+}
+
+#commentText {
+    width: 100%;
+}
+
+.button {
+    margin: 3px;
+}
+
+.selected {
+    color: rgba(255, 255, 255, 0.85);
+    box-shadow: rgba(30, 22, 54, 0.7) 0 0px 0px 40px inset;
+}
+
+#goodPointView {
+    display: flex;
+    /* border-top: 1px solid black; */
+}
+
+#registeredView,
+#statisticsView {
+    font-size: 20px;
+    border: 1px solid black;
+    width: 100%;
+}
+
+#statisticsView {
+    display: none;
+}
+
+#userID {
+    width: 200px;
+}
+
+.userData {
+    display: flex;
+}
+
+#userInformation {
+    display: none;
+    background-color: lightyellow;
+    z-index: 100;
+    border: solid 1px black;
+    padding: 10px;
+    font-size: 20px;
+}
+
+#categoryBox,
+#goodPointElements {
+    margin-top: 30px;
+}
+
+button {
+    color: rgba(30, 22, 54, 0.6);
+    box-shadow: rgba(30, 22, 54, 0.4) 0 0px 0px 2px inset;
+    font-size: 24px;
+}
+
+button:hover {
+    color: rgba(255, 255, 255, 0.85);
+    box-shadow: rgba(30, 22, 54, 0.7) 0 0px 0px 40px inset;
+}
+
+.tips {
+    font-size: 12px;
+}
