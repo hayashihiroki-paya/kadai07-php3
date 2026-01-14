@@ -244,34 +244,6 @@ function calculateRecommendationScores($userPoints, $books)
     return $result;
 }
 
-// function calculateRecommendationScores($userPoints, $books)
-// {
-//     $result = [];
-
-//     foreach ($books as $book) {
-//         $score = 0;
-
-//         foreach ($userPoints as $u) {
-//             $point = $u['goodPoint'];
-
-//             if (isset($book['points'][$point])) {
-//                 $score += $u['count'] * $book['points'][$point];
-//             }
-//         }
-
-//         if ($score > 0) {
-//             $result[] = [
-//                 'isbn' => $book['isbn'],
-//                 'score' => $score
-//             ];
-//         }
-//     }
-
-//     usort($result, fn($a, $b) => $b['score'] <=> $a['score']);
-
-//     return $result;
-// }
-
 // isbnのリストを受け取って表示用のミニマムデータを返す
 function getBookInfoByIsbnList($isbnList)
 {

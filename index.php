@@ -53,6 +53,8 @@ if (isset($_SESSION["userName"])) {
                         <option value="user01">ユーザー１</option>
                         <option value="user02">ユーザー２</option>
                         <option value="user03">ユーザー３</option>
+                        <option value="user04">ユーザー４</option>
+                        <option value="user05">ユーザー５</option>
                     </select>
                     <button type="submit" class="button">ログイン</button>
                 </form>
@@ -65,7 +67,7 @@ if (isset($_SESSION["userName"])) {
     <div id="main">
         <div id="leftView">
             <div id="userInformation">
-                
+
             </div>
             <div id="detailedInformation">
 
@@ -78,6 +80,9 @@ if (isset($_SESSION["userName"])) {
             </div>
         </div>
 
+        <button id="favoriteToggle" class="button">
+            ★ お気に入りを表示
+        </button>
         <div id="favorite">
             <p>お気に入り登録リスト</p>
             <p><?= $favoriteText ?></p>

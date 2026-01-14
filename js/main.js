@@ -5,8 +5,14 @@
 // ページ更新時に保存したデータの一覧表示を行い、取得したデータを保存する
 // 保存するための空の配列
 let favoriteBookList = [];
+let favoriteIsbnList = [];
 // 保存したデータをとってきて上の配列に入れつつ表示まで行う
 loadBookList();
+
+// スマホ向け、長押し判定用
+let longPressTimer = null;
+const LONG_PRESS_TIME = 500; // ms
+
 
 // ボタンの見た目をjQuery UI で設定
 // $(".button").button();
@@ -78,16 +84,74 @@ $("#favorite").droppable({
         // console.log("対応する検索結果情報:", selectionData[index]);
 
         // favorite_save.php に情報を送って保存
-        await $.post("php/favorite_save.php", {
-            bookData: selectionData[index]
-        }, function (res) {
-            console.log("res", res);
-            loadBookList();
-        });
+        // スマホの時別方法で発火させるので関数化しました
+        await saveFavoriteByIndex(index);
+        // await $.post("php/favorite_save.php", {
+        //     bookData: selectionData[index]
+        // }, function (res) {
+        //     console.log("res", res);
+        //     loadBookList();
+        // });
 
         // console.log("保存処理終了");
 
     }
+});
+
+
+// =====================================
+// スマホ用 検索結果長押しで詳細表示
+// =====================================
+$(document).on("touchstart", ".viewBlock", function (e) {
+    console.log("長押し開始");
+
+    if (!isMobile()) return;
+
+    const $block = $(this);
+
+    longPressTimer = setTimeout(() => {
+        showDetailFromBlock($block);
+    }, LONG_PRESS_TIME);
+});
+
+// キャンセル処理
+$(document).on("touchend touchmove", ".viewBlock", function () {
+    console.log("長押しキャンセル");
+    if (!isMobile()) return;
+
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+});
+
+// 開いているところタップで閉じる
+$(document).on("click", ".viewBlock.showDetail", function () {
+    console.log("タップで閉じる");
+    if (!isMobile()) return;
+
+    $(this).removeClass("showDetail");
+});
+
+
+
+// =====================================
+// スマホ用 お気に入り登録ボタンを押したときの処理
+// =====================================
+$(document).on("click", ".favoriteAddButton", async function (e) {
+    e.stopPropagation();
+
+    console.log("お気に入り登録ボタン押した");
+    if ($(this).prop("disabled")) return;
+
+    const $block = $(this).closest(".viewBlock");
+    const index = $(".viewBlock").index($block);
+
+    await saveFavoriteByIndex(index);
+
+    $(this)
+        .text("✓ 登録済み")
+        .prop("disabled", true);
+
+    $block.addClass("alreadyFavorite");
 });
 
 
@@ -116,12 +180,21 @@ $(document).on("click", ".deleteBtn", async function () {
     });
 });
 
+// =====================================
+// スマホ表示中のお気に入り表示切替ボタン
+// =====================================
+$("#favoriteToggle").on("click", function () {
+    favoriteToggle();
+});
 
 
 // =====================================
 // 保存済みデータクリック時の処理（詳細情報、コメント記入欄表示）
 // =====================================
 $(document).on("click", ".book", async function () {
+
+    // お気に入り一覧を消す
+    favoriteToggle();
 
     // console.log("保存済みデータクリックされました");
     // 保存リスト何番目か取得
@@ -327,8 +400,7 @@ $(document).on("click", ".saveButton", async function () {
 // =====================================
 $(document).on("click", ".statisticsButton", async function () {
     $("#statisticsView").css("display", "block");
-    $("#registeredView").css("width", "50%");
-    $("#statisticsView").css("width", "50%");
+
     const isbn = $(this).data("isbn");
     // good_points_tableからuserIDごとの情報をまとめて取得する
     await $.post("php/book_data_read.php", {
@@ -342,18 +414,31 @@ $(document).on("click", ".statisticsButton", async function () {
         // const sortData = dataSort(bookData);
 
         // countが大きい順に並んだので表示していく
-        let html = "<p>みんなの好みの傾向は・・・</p>";
+        let html = `
+            <p class="statisticsTitle">みんなの好みの傾向</p>
+            <div class="statisticsList">
+        `;
 
         for (let i = 0; i < bookData.length; i++) {
             html += `
-            <p>${i + 1}位：${bookData[i].category} が ${bookData[i].goodPoint} </p>`;
-        };
+                <div class="statisticsItem">
+                    <span class="rankBadge rank${i + 1}">
+                        ${i + 1}
+                    </span>
+                    <span class="statisticsCategory">
+                        ${bookData[i].category}
+                    </span>
+                    <span class="statisticsValue">
+                        ${bookData[i].goodPoint}
+                    </span>
+                </div>
+            `;
+        }
 
-        // タグを埋め込む
+        html += `</div>`;
+
         $("#statisticsView").html(html);
 
-        // 作成したボタンをUIデザインに変更する
-        // $(".button").button();
 
     });
 });
@@ -539,35 +624,64 @@ function searchData(data) {
 // 検索結果の配列を渡して中身を描画してくれる関数
 function viewData(data) {
 
+    favoriteIsbnList = favoriteBookList.map(book => book.isbn);
+    console.log("favoriteBookList", favoriteBookList);
+    console.log("favoriteIsbnList", favoriteIsbnList);
+
     // 何件ヒットしたかを表示
     $("#numberOfMatches").text("検索ヒット数：" + data.length + "件");
 
     // 検索結果のhtmlを作成
     let html = "";
     for (let i = 0; i < data.length; i++) {
+
+        const isbn = data[i].isbn;
+        const isFavorite = favoriteIsbnList.includes(isbn);
         html += `
-            <div class="viewBlock">
+            <div class="viewBlock ${isFavorite ? "alreadyFavorite" : ""}"
+                 data-isbn="${isbn}">
                 <p>${data[i].title}</p>
                 <div><img src="${data[i].largeImageUrl}" alt="${data[i].title}の表紙"></div>
-                <p>${data[i].author}</p>
-                <p>${data[i].itemCaption}</p>
-                <p>${data[i].publisherName}</p>
-                <p>${data[i].salesDate}</p>
-                <p>${data[i].seriesName}</p>
+                <div class="detailInfo">
+                    <p>${data[i].author}</p>
+                    <p>${data[i].itemCaption}</p>
+                    <p>${data[i].publisherName}</p>
+                    <p>${data[i].salesDate}</p>
+                    <p>${data[i].seriesName}</p>
+                </div>
+                <button class="favoriteAddButton"
+                        ${isFavorite ? "disabled" : ""}>
+                    ${isFavorite ? "✓ 登録済み" : "★ お気に入り"}
+                </button>
             </div>
             `
     }
     // htmlを反映
     $("#result").html(html);
 
-    // ここで作った要素なのでここでドラッグできるように設定する
-    $(".viewBlock").draggable({
-        helper: "clone", // クローンがドラッグされるようにする
-        start: function (e, ui) {
-            ui.helper.width($(this).width()); // クローンはbody直下に生成されるらしいので
-            ui.helper.height($(this).height()); // %指定だとサイズがおかしくなるので元データのサイズを継承
-        }
-    });
+    if (!isMobile()) {
+        $(".viewBlock").draggable({
+            helper: "clone",
+            start: function (e, ui) {
+                ui.helper.width($(this).width());
+                ui.helper.height($(this).height());
+            }
+        });
+    }
+
+    // // ここで作った要素なのでここでドラッグできるように設定する
+    // $(".viewBlock").draggable({
+    //     helper: "clone", // クローンがドラッグされるようにする
+    //     start: function (e, ui) {
+    //         ui.helper.width($(this).width()); // クローンはbody直下に生成されるらしいので
+    //         ui.helper.height($(this).height()); // %指定だとサイズがおかしくなるので元データのサイズを継承
+    //     }
+    // });
+    // // 画面幅がスマホの時取り消す
+    // if (isMobile()) {
+    //     console.log("スマホ画面のためドラッグ処理取り消し");
+    //     $(".viewBlock").draggable("disable");
+    // }
 }
 
 // favorites_tableに保存されてるデータを取得する関数
@@ -594,9 +708,11 @@ function renderBookList(list) {
     list.forEach(book => {
         $("#bookList").append(`
             <div class="book" data-isbn="${book.isbn}">
-                <p>${book.title}</p>
-                <p>${book.author}</p>
                 <img src="${book.largeImageUrl}">
+                <div class="bookText">
+                    <p>${book.title}</p>
+                    <p>${book.author}</p>
+                </div>
             </div>
         `);
     });
@@ -778,15 +894,47 @@ async function goodPointRead(isbn) {
         const goodPoints = JSON.parse(res);
         // console.log("goodPoints:", goodPoints);
         let goodPointHtml = "";
-        for (let i = 0; i < goodPoints.length; i++) {
-            goodPointHtml += `${goodPoints[i].category}:${goodPoints[i].goodPoint} / `;
-        }
-        if (!goodPointHtml) {
-            goodPointHtml = "登録済みの「ココ好き！」ポイントはありません";
+
+        if (goodPoints.length === 0) {
+            goodPointHtml = `
+                <p class="noGoodPoint">
+                    登録済みの「ココ好き！」ポイントはありません
+                </p>
+            `;
         } else {
-            goodPointHtml = "登録済みの「ココ好き！」ポイント <br> " + goodPointHtml;
+            goodPointHtml = `
+                <p class="goodPointTitle">登録済みの「ココ好き！」ポイント</p>
+                <div class="goodPointList">
+            `;
+
+            for (let i = 0; i < goodPoints.length; i++) {
+                goodPointHtml += `
+                    <div class="goodPointItem">
+                        <span class="goodPointCategory">
+                            ${goodPoints[i].category}
+                        </span>
+                        <span class="goodPointValue">
+                            ${goodPoints[i].goodPoint}
+                        </span>
+                    </div>
+                `;
+            }
+
+            goodPointHtml += `</div>`;
         }
+
         $("#registeredView").html(goodPointHtml);
+
+        // let goodPointHtml = "";
+        // for (let i = 0; i < goodPoints.length; i++) {
+        //     goodPointHtml += `${goodPoints[i].category}:${goodPoints[i].goodPoint} / `;
+        // }
+        // if (!goodPointHtml) {
+        //     goodPointHtml = "登録済みの「ココ好き！」ポイントはありません";
+        // } else {
+        //     goodPointHtml = "登録済みの「ココ好き！」ポイント <br> " + goodPointHtml;
+        // }
+        // $("#registeredView").html(goodPointHtml);
     });
 }
 
@@ -814,11 +962,48 @@ function dataSort(data) {
     return Object.values(map).sort((a, b) => b.count - a.count);
 }
 
-// おすすめデータを受け取って描画まで行う
-function recommendView(data) {
-    // [{"isbn":"9784867168738","score":18},{"isbn":...}] という感じ
-    // 全情報出すかもしれないのでデータはすべて取得するが、
-    // いったん表示はタイトルと画像のみで
-    // favorite_tableでisbnでヒットするはずなのでそこからデータ取ってくる
+// お気に入りに保存する処理を関数化
+// 検索結果の一覧表示のインデックス番号を受け取って、対応する番号を保存処理に送る
+async function saveFavoriteByIndex(index) {
+    await $.post("php/favorite_save.php", {
+        bookData: selectionData[index]
+    }, function (res) {
+        console.log("res", res);
+        loadBookList();
+    });
+}
 
+// 画面幅で使用中のデバイスを設定
+function isMobile() {
+    return window.matchMedia("(max-width: 768px)").matches;
+}
+
+// お気に入りに登録済みの時のボタンを変更する
+function updateFavoriteButton(isbn) {
+    const isRegistered = favoriteList.includes(isbn);
+
+    if (isRegistered) {
+        $(`.viewBlock[data-isbn="${isbn}"] .favoriteAddButton`)
+            .text("✓ 登録済み")
+            .prop("disabled", true);
+    }
+}
+
+// 検索結果の一つを詳細表示する
+function showDetailFromBlock($block) {
+    // 他のカードを閉じる
+    $(".viewBlock").removeClass("showDetail");
+
+    // このカードだけ開く
+    $block.addClass("showDetail");
+}
+
+function favoriteToggle() {
+    $("#favorite").toggleClass("open");
+
+    if ($("#favorite").hasClass("open")) {
+        $("#favoriteToggle").text("★ お気に入りを閉じる");
+    } else {
+        $("#favoriteToggle").text("★ お気に入りを表示");
+    }
 }
